@@ -1,67 +1,76 @@
-import React from 'react';
-
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import './Main.css';
 
-import logo from '../assets/logo.svg'
-import like from '../assets/like.svg'
-import deslike from '../assets/deslike.svg'
+import api from '../services/api';
+
+import logo from '../assets/logo.svg';
+import like from '../assets/like.svg';
+import deslike from '../assets/deslike.svg';
 
 function Main({ match }) {
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    async function loadUsers() {
+      const response = await api.get('/devs', {
+        headers: {
+          user: match.params.id,
+        }
+      })
+
+      setUsers(response.data);
+    }
+
+    loadUsers();
+  }, [match.params.id])
+
+  async function handleLike(id) {
+    await api.post(`/devs/${id}/likes`, null, {
+      headers: { user: match.params.id }
+    })
+
+    setUsers(users.filter(user => user._id !== id));
+  }
+
+  async function handleDeslike(id) {
+    await api.post(`/devs/${id}/deslikes`, null, {
+      headers: { user: match.params.id }
+    })
+
+    setUsers(users.filter(user => user._id !== id));
+  }
+
   return (
     <div className="main-container">
-      <img src={logo} alt="Tindev" />
-      <ul>
+      <Link to="/">
+        <img src={logo} alt="Tindev" />
+      </Link>
 
-        <li>
-          <img src="https://avatars2.githubusercontent.com/u/23706340?s=460&v=4" alt="" />
-          <footer>
-            <strong>Lucas Lombardi Floriano</strong>
-            <p>“O espírito humano precisa prevalecer sobre a tecnologia”. - Albert Einstein</p>
-          </footer>
+      {users.length > 0 ? (
+        <ul>
+          {users.map(user => (
+            <li key={user._id}>
+              <img src={user.avatar} alt={user.name} />
+              <footer>
+                <strong>{user.name}</strong>
+                <p>{user.bio}</p>
+              </footer>
 
-          <div className="buttons">
-            <button type="button">
-              <img src={deslike} alt="Deslike" />
-            </button>
-            <button type="button" alt="Like">
-              <img src={like} alt="" />
-            </button>
-          </div>
-        </li>
-
-        <li>
-          <img src="https://avatars2.githubusercontent.com/u/23706340?s=460&v=4" alt="" />
-          <footer>
-            <strong>Lucas Lombardi Floriano</strong>
-            <p>Lorem ipsum Dolor</p>
-          </footer>
-          <div className="buttons">
-            <button type="button">
-              <img src={deslike} alt="Deslike" />
-            </button>
-            <button type="button" alt="Like">
-              <img src={like} alt="" />
-            </button>
-          </div>
-        </li>
-
-        <li>
-          <img src="https://avatars2.githubusercontent.com/u/23706340?s=460&v=4" alt="" />
-          <footer>
-            <strong>Lucas Lombardi Floriano</strong>
-            <p>Lorem ipsusaawdsawdad dadw m Dolor</p>
-          </footer>
-
-          <div className="buttons">
-            <button type="button">
-              <img src={deslike} alt="Deslike" />
-            </button>
-            <button type="button" alt="Like">
-              <img src={like} alt="" />
-            </button>
-          </div>
-        </li>
-      </ul>
+              <div className="buttons">
+                <button type="button" onClick={() => handleDeslike(user._id)}>
+                  <img src={deslike} alt="Deslike" />
+                </button>
+                <button type="button" alt="Like" onClick={() => handleLike(user._id)}>
+                  <img src={like} alt="" />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+          <div className="empty">Acabou :(</div>
+        )}
     </div>
   )
 }
